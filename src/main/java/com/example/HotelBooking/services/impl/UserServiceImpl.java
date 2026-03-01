@@ -8,6 +8,7 @@ import com.example.HotelBooking.exceptions.InvalidCredentialException;
 import com.example.HotelBooking.exceptions.NotFoundException;
 import com.example.HotelBooking.repositories.BookingRepository;
 import com.example.HotelBooking.repositories.UserRepository;
+import com.example.HotelBooking.security.JwtUtils;
 import com.example.HotelBooking.services.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
     private final ModelMapper modelMapper;
     private final BookingRepository bookingRepository;
 
@@ -60,7 +62,24 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Response loginUser(LoginRequest loginRequest) {
-       return null;
+       User user = userRepository.findByEmail(loginRequest.getEmail())
+               .orElseThrow(()-> new NotFoundException("Email Not Found"));
+
+        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+            throw new InvalidCredentialException("Password doesn't match");
+        }
+
+        String token = jwtUtils.generateToken(user.getEmail());
+
+
+        return Response.builder()
+                .status(200)
+                .message("user logged in successfully")
+                .role(user.getRole())
+                .token(token)
+                .isActive(user.getIsActive())
+                .expirationTime("6 months")
+                .build();
     }
 
     @Override

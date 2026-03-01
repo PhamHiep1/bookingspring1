@@ -138,7 +138,31 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public Response getAvailableRooms(LocalDate checkInDate, LocalDate checkOutDate, RoomType roomType) {
-        return null;
+
+        //validation: Ensure the check-in date is not before today
+        if (checkInDate.isBefore(LocalDate.now())){
+            throw new InvalidBookingStateAndDateException("check in date cannot be before today ");
+        }
+
+        //validation: Ensure the check-out date is not before check in date
+        if (checkOutDate.isBefore(checkInDate)){
+            throw new InvalidBookingStateAndDateException("check out date cannot be before check in date ");
+        }
+
+        //validation: Ensure the check-in date is not same as check out date
+        if (checkInDate.isEqual(checkOutDate)){
+            throw new InvalidBookingStateAndDateException("check in date cannot be equal to check out date ");
+        }
+
+        List<Room> roomList = roomRepository.findAvailableRooms(checkInDate, checkOutDate, roomType);
+
+        List<RoomDTO> roomDTOList = modelMapper.map(roomList,new TypeToken<List<RoomDTO>>() {}.getType());
+
+        return Response.builder()
+                .status(200)
+                .message("success")
+                .rooms(roomDTOList)
+                .build();
     }
 
     @Override
@@ -149,7 +173,16 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public Response searchRoom(String input) {
-        return null;
+
+        List<Room> roomList = roomRepository.searchRooms(input);
+
+        List<RoomDTO> roomDTOList = modelMapper.map(roomList,new TypeToken<List<RoomDTO>>() {}.getType());
+
+        return Response.builder()
+                .status(200)
+                .message("success")
+                .rooms(roomDTOList)
+                .build();
     }
 
 
